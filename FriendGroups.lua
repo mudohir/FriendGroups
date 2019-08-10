@@ -292,11 +292,11 @@ local function FriendGroups_UpdateFriendButton(button)
 		button.name:SetTextColor(nameColor.r, nameColor.g, nameColor.b)
 		button.info:SetText(infoText)
 		button:Show()
-		if (isFavoriteFriend) then
+		if isFavoriteFriend and button.Favorite then
 			button.Favorite:Show()
 			button.Favorite:ClearAllPoints()
 			button.Favorite:SetPoint("TOPLEFT", button.name, "TOPLEFT", button.name:GetStringWidth(), 0)
-		else
+		elseif button.Favorite then
 			button.Favorite:Hide()
 		end
 	else
@@ -417,13 +417,17 @@ end
 
 local function FriendGroups_Update(forceUpdate)
 	local numBNetTotal, numBNetOnline, numBNetFavorite, numBNetFavoriteOnline = BNGetNumFriends()
+	numBNetFavorite = numBNetFavorite or 0
+	numBNetFavoriteOnline = numBNetFavoriteOnline or 0
 	local numBNetOffline = numBNetTotal - numBNetOnline
 	local numBNetFavoriteOffline = numBNetFavorite - numBNetFavoriteOnline
 	local numWoWTotal = C_FriendList.GetNumFriends()
 	local numWoWOnline = C_FriendList.GetNumOnlineFriends()
 	local numWoWOffline = numWoWTotal - numWoWOnline
 
-	QuickJoinToastButton:UpdateDisplayedFriendCount()
+	if QuickJoinToastButton then
+		QuickJoinToastButton:UpdateDisplayedFriendCount()
+	end
 	if ( not FriendsListFrame:IsShown() and not forceUpdate) then
 		return
 	end
@@ -522,7 +526,7 @@ local function FriendGroups_Update(forceUpdate)
 		if not WowFriendGroups[i] then
 			WowFriendGroups[i] = {}
 		end
-		local note = select(7,GetFriendInfo(i))
+		local note = select(7,C_FriendList.GetFriendInfoByIndex(i))
 		NoteAndGroups(note, WowFriendGroups[i])
 		for group in pairs(WowFriendGroups[i]) do
 			IncrementGroup(group, true)
