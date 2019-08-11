@@ -2,7 +2,7 @@
 ## Interface: 11302
 ## Title: Friend Groups
 ## Author: Mikeprod
-## Version: 1.13_classic
+## Version: 1.13_classic_f1
 
 ## Notes: Addon managing your contact list with groups
 ## SavedVariables: FriendGroups_SavedVars
