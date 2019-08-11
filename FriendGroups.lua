@@ -847,8 +847,8 @@ local function FriendGroups_Rename(self, old)
 			BNSetFriendNote(presenceID, note)
 		end
 	end
-	for i = 1, GetNumFriends() do
-		local note = select(7, GetFriendInfo(i))
+	for i = 1, C_FriendList.GetNumFriends() do
+		local note = select(7, C_FriendList.GetFriendInfoByIndex(i))
 		note = NoteAndGroups(note, groups)
 		if groups[old] then
 			groups[old] = nil
@@ -916,8 +916,8 @@ local function InviteOrGroup(clickedgroup, invite)
 			end
 		end
 	end
-	for i = 1, GetNumFriends() do
-		local name, _, _, _, connected, _, noteText = GetFriendInfo(i)
+	for i = 1, C_FriendList.GetNumFriends() do
+		local name, _, _, _, connected, _, noteText = C_FriendList.GetFriendInfoByIndex(i)
 		local note = NoteAndGroups(noteText, groups)
 		if groups[clickedgroup] then
 			if invite and connected then
