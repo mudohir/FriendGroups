@@ -90,14 +90,14 @@ local function FriendGroups_UpdateFriendButton(button)
 	local height = FRIENDS_BUTTON_HEIGHTS[button.buttonType]
 	local nameText, nameColor, infoText, broadcastText, isFavoriteFriend
 	local hasTravelPassButton = false
-	if ( button.buttonType == FRIENDS_BUTTON_TYPE_WOW ) then
+	if button.buttonType == FRIENDS_BUTTON_TYPE_WOW then
 		local info = C_FriendList.GetFriendInfoByIndex(FriendButtons[index].id)
 		broadcastText = nil
 		if info.connected then
 			button.background:SetColorTexture(FRIENDS_WOW_BACKGROUND_COLOR.r, FRIENDS_WOW_BACKGROUND_COLOR.g, FRIENDS_WOW_BACKGROUND_COLOR.b, FRIENDS_WOW_BACKGROUND_COLOR.a)
-			if ( info.afk ) then
+			if info.afk then
 				button.status:SetTexture(FRIENDS_TEXTURE_AFK)
-			elseif ( info.dnd ) then
+			elseif info.dnd then
 				button.status:SetTexture(FRIENDS_TEXTURE_DND)
 			else
 				button.status:SetTexture(FRIENDS_TEXTURE_ONLINE)
@@ -526,7 +526,7 @@ local function FriendGroups_Update(forceUpdate)
 		if not WowFriendGroups[i] then
 			WowFriendGroups[i] = {}
 		end
-		local note = select(7,C_FriendList.GetFriendInfoByIndex(i))
+		local note = C_FriendList.GetFriendInfoByIndex(i) and C_FriendList.GetFriendInfoByIndex(i).notes
 		NoteAndGroups(note, WowFriendGroups[i])
 		for group in pairs(WowFriendGroups[i]) do
 			IncrementGroup(group, true)
@@ -558,7 +558,7 @@ local function FriendGroups_Update(forceUpdate)
 		if not WowFriendGroups[j] then
 			WowFriendGroups[j] = {}
 		end
-		local note = select(7,C_FriendList.GetFriendInfoByIndex(j))
+		local note = C_FriendList.GetFriendInfoByIndex(j) and C_FriendList.GetFriendInfoByIndex(j).notes
 		NoteAndGroups(note, WowFriendGroups[j])
 		for group in pairs(WowFriendGroups[j]) do
 			IncrementGroup(group)
@@ -758,7 +758,9 @@ local function FriendGroups_OnFriendMenuClick(self)
 			end
 		elseif source == "FRIEND" or source == "FRIEND_OFFLINE" then
 			for i = 1, C_FriendList.GetNumFriends() do
-				local name, _, _, _, _, _, note = C_FriendList.GetFriendInfoByIndex(i)
+				local friend_info = C_FriendList.GetFriendInfoByIndex(i)
+				local name = friend_info.name
+				local note = friend_info.notes
 				if dropdown.name and name:find(dropdown.name) then
 					if creating then
 						StaticPopup_Show("FRIEND_GROUP_CREATE", nil, nil, { id = i, note = note, set = SetFriendNotes })
@@ -803,7 +805,9 @@ local function FriendGroups_HideButtons()
 			note = select(13, BNGetFriendInfoByID(dropdown.bnetIDAccount))
 		else
 			for i = 1, C_FriendList.GetNumFriends() do
-				local name, _, _, _, _, _, noteText = C_FriendList.GetFriendInfoByIndex(i)
+				local friend_info = C_FriendList.GetFriendInfoByIndex(i)
+				local name = friend_info.name
+				local noteText = friend_info.notes
 				if dropdown.name and name:find(dropdown.name) then
 					note = noteText
 					break
@@ -848,7 +852,7 @@ local function FriendGroups_Rename(self, old)
 		end
 	end
 	for i = 1, C_FriendList.GetNumFriends() do
-		local note = select(7, C_FriendList.GetFriendInfoByIndex(i))
+		local note = C_FriendList.GetFriendInfoByIndex(i) and C_FriendList.GetFriendInfoByIndex(i).notes
 		note = NoteAndGroups(note, groups)
 		if groups[old] then
 			groups[old] = nil
@@ -917,7 +921,10 @@ local function InviteOrGroup(clickedgroup, invite)
 		end
 	end
 	for i = 1, C_FriendList.GetNumFriends() do
-		local name, _, _, _, connected, _, noteText = C_FriendList.GetFriendInfoByIndex(i)
+		local friend_info = C_FriendList.GetFriendInfoByIndex(i)
+		local name = friend_info.name
+		local connected = friend_info.connected
+		local noteText = friend_info.notes
 		local note = NoteAndGroups(noteText, groups)
 		if groups[clickedgroup] then
 			if invite and connected then
