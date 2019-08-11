@@ -558,7 +558,7 @@ local function FriendGroups_Update(forceUpdate)
 		if not WowFriendGroups[j] then
 			WowFriendGroups[j] = {}
 		end
-		local note = select(7,GetFriendInfo(j))
+		local note = select(7,C_FriendList.GetFriendInfoByIndex(j))
 		NoteAndGroups(note, WowFriendGroups[j])
 		for group in pairs(WowFriendGroups[j]) do
 			IncrementGroup(group)
@@ -757,8 +757,8 @@ local function FriendGroups_OnFriendMenuClick(self)
 				BNSetFriendNote(dropdown.bnetIDAccount, note)
 			end
 		elseif source == "FRIEND" or source == "FRIEND_OFFLINE" then
-			for i = 1, GetNumFriends() do
-				local name, _, _, _, _, _, note = GetFriendInfo(i)
+			for i = 1, C_FriendList.GetNumFriends() do
+				local name, _, _, _, _, _, note = C_FriendList.GetFriendInfoByIndex(i)
 				if dropdown.name and name:find(dropdown.name) then
 					if creating then
 						StaticPopup_Show("FRIEND_GROUP_CREATE", nil, nil, { id = i, note = note, set = SetFriendNotes })
@@ -802,8 +802,8 @@ local function FriendGroups_HideButtons()
 		if dropdown.bnetIDAccount then
 			note = select(13, BNGetFriendInfoByID(dropdown.bnetIDAccount))
 		else
-			for i = 1, GetNumFriends() do
-				local name, _, _, _, _, _, noteText = GetFriendInfo(i)
+			for i = 1, C_FriendList.GetNumFriends() do
+				local name, _, _, _, _, _, noteText = C_FriendList.GetFriendInfoByIndex(i)
 				if dropdown.name and name:find(dropdown.name) then
 					note = noteText
 					break
