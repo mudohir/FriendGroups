@@ -571,7 +571,7 @@ local function FriendGroups_Update(forceUpdate)
 
 	buttonCount = buttonCount + GroupCount
 	-- 1.5 is a magic number which preventq the list scroll to be too long
-	totalScrollHeight = totalButtonHeight + GroupCount * FRIENDS_BUTTON_HEIGHTS[FRIENDS_BUTTON_TYPE_DIVIDER] / 1.5
+	totalScrollHeight = totalButtonHeight + GroupCount * FRIENDS_BUTTON_HEIGHTS[FRIENDS_BUTTON_TYPE_DIVIDER]
 
 	FriendsFrameFriendsScrollFrame.totalFriendListEntriesHeight = totalScrollHeight
 	FriendsFrameFriendsScrollFrame.numFriendListEntries = addButtonIndex
