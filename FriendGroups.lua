@@ -133,63 +133,79 @@ local function GetOnlineInfoText(client, isMobile, rafLinkType, locationText)
 	return locationText
 end
 
-local function GetFriendInfoById(id)
-	local accountName, characterName, class, level, isFavoriteFriend, isOnline, 
-		bnetAccountId, client, canCoop, wowProjectID, lastOnline,
-		isAFK, isGameAFK, isDND, isGameBusy, mobile, zoneName
-	local realmName
-
+local function FriendGroups_GetAccountInfo(id)
 	if C_BattleNet and C_BattleNet.GetFriendAccountInfo then
 		local accountInfo = C_BattleNet.GetFriendAccountInfo(id)
-		if accountInfo then
-			accountName = accountInfo.accountName
-			isFavoriteFriend = accountInfo.isFavorite
-			bnetAccountId = accountInfo.bnetAccountID
-			isAFK = accountInfo.isAFK
-			isGameAFK = accountInfo.isGameAFK
-			isDND = accountInfo.isDND
-			isGameBusy = accountInfo.isGameBusy
-			mobile = accountInfo.isWowMobile
-			zoneName = accountInfo.areaName
-			lastOnline = accountInfo.lastOnlineTime
+		accountInfo.canCoop = CanCooperateWithGameAccount(accountInfo)
+		return accountInfo
+	end
 
-			local gameAccountInfo = accountInfo.gameAccountInfo
+	local bnetIDAccount, accountName, battleTag, isBattleTag, characterName, 
+		bnetIDGameAccount, client, isOnline, lastOnline, isBnetAFK, 
+		isBnetDND, messageText, noteText, isRIDFriend, messageTime, 
+		wowProjectID, isReferAFriend, canSummonFriend, isFavorite, mobile = BNGetFriendInfo(id)
 
-			if gameAccountInfo then
-				isOnline = gameAccountInfo.isOnline
-				characterName = gameAccountInfo.characterName
-				class = gameAccountInfo.className
-				level = gameAccountInfo.characterLevel
-				client = gameAccountInfo.clientProgram
-				wowProjectID = gameAccountInfo.wowProjectID
-				gameText = gameAccountInfo.richPresence
-				zoneName = gameAccountInfo.areaName
-				realmName = gameAccountInfo.realmName
-			end
+	local accountInfo = {}
 
-			canCoop = CanCooperateWithGameAccount(accountInfo)
+	accountInfo.bnetAccountID = bnetIDAccount
+	accountInfo.accountName = accountName
+	accountInfo.battleTag = battleTag
+	accountInfo.isFriend = BNIsFriend(bnetIDAccount)
+	accountInfo.isBattleTagFriend = isBattleTag
+	accountInfo.lastOnlineTime = lastOnline
+	accountInfo.isAFK = isAFK
+	accountInfo.isDND = isDND
+	accountInfo.isFavorite = isFavorite
+	--accountInfo.appearOffline
+	accountInfo.customMessage = messageText
+	accountInfo.customMessageTime = messageTime
+	accountInfo.note = noteText
+	accountInfo.canCoop = CanCooperateWithGameAccount(bnetIDGameAccount)
+
+	local realmName, realmId, faction, class, race, zoneName, level,
+		gameText, isGameAFK, isGameBusy, guid, wowProjectID, mobile
+
+	if isOnline then 
+		_, _, _, realmName, realmID, faction, _, class, race, zoneName, level,
+		gameText, _, _, _, _, _, isGameAFK, isGameBusy, guid,
+		wowProjectID, mobile = BNGetGameAccountInfo(bnetIDGameAccount)
+	end
+
+	if isReferAFriend then
+		-- This is an approximation of the truth...
+		if accountInfo.isFriend then
+			accountInfo.rafLinkType = 3 -- Enum.RafLinkType.Both
+		else
+			accountInfo.rafLinkType = 1 -- Enum.RafLinkType.Recruit
 		end
 	else
-		bnetIDAccount, accountName, _, _, characterName, bnetAccountId, client, 
-		isOnline, lastOnline, isAFK, isDND, _, _, _, _, wowProjectID, _, _, 
-		isFavorite, mobile = BNGetFriendInfo(id)
-
-		if isOnline then
-			_, _, _, realmName, realmID, faction, _, class, _, zoneName, level, 
-			gameText, _, _, _, _, _, isGameAFK, isGameBusy, guid, 
-			wowProjectID, mobile = BNGetGameAccountInfo(bnetAccountId)
-		end
-
-		canCoop = CanCooperateWithGameAccount(bnetAccountId)
+		accountInfo.rafLinkType = 0 -- Enum.RafLinkType.None
 	end
 
-	if realmName and realmName ~= "" then
-		zoneName = zoneName .. " - " .. realmName
-	end
+	local gameAccountInfo = {}
 
-	return accountName, characterName, class, level, isFavoriteFriend, isOnline, 
-		bnetAccountId, client, canCoop, wowProjectID, lastOnline,
-		isAFK, isGameAFK, isDND, isGameBusy, mobile, zoneName, gameText
+	gameAccountInfo.gameAccountId = bnetIDGameAccount
+	gameAccountInfo.clientProgram = client
+	gameAccountInfo.isOnline = isOnline
+	gameAccountInfo.isGameBusy = isGameBusy
+	gameAccountInfo.isGameAFK = isGameAFK
+	gameAccountInfo.wowProjectID = wowProjectID
+	gameAccountInfo.characterName = characterName
+	gameAccountInfo.realmName = realmName
+	gameAccountInfo.realmID = realmID
+	gameAccountInfo.factionName = faction
+	gameAccountInfo.raceName = race
+	gameAccountInfo.className = class
+	gameAccountInfo.areaName = zoneName
+	gameAccountInfo.characterLevel = level
+	gameAccountInfo.richPresence = gameText
+	gameAccountInfo.playerGuid = guid
+	gameAccountInfo.isWowMobile = mobile
+	gameAccountInfo.canSummon = canSummonFriend
+
+	accountInfo.gameAccountInfo = gameAccountInfo	
+
+	return accountInfo;
 end
 
 local function FriendGroups_GetBNetButtonNameText(accountName, client, canCoop, characterName, class, level)
@@ -276,9 +292,30 @@ local function FriendGroups_UpdateFriendButton(button)
 		FriendsFrame_SummonButton_Update(button.summonButton)
 	elseif button.buttonType == FRIENDS_BUTTON_TYPE_BNET then
 		local id = FriendButtons[index].id
-		local accountName, characterName, class, level, isFavoriteFriend, isOnline, 
-			bnetAccountId, client, canCoop, wowProjectID, lastOnline,
-			isAFK, isGameAFK, isDND, isGameBusy, mobile, zoneName, gameText = GetFriendInfoById(id)
+		local accountInfo = FriendGroups_GetAccountInfo(id)
+		local accountName = accountInfo.accountName
+		local lastOnline = accountInfo.lastOnlineTime
+		local isAFK = accountInfo.isAFK
+		local isDND = accountInfo.isDND
+		local canCoop = accountInfo.canCoop
+		local gameAccountInfo = accountInfo.gameAccountInfo
+		local bnetIDGameAccount = gameAccountInfo.gameAccountId
+		local client = gameAccountInfo.clientProgram
+		local isOnline = gameAccountInfo.isOnline
+		local isGameBusy = gameAccountInfo.isGameBusy
+		local isGameAFK = gameAccountInfo.isGameAFK
+		local wowProjectID = gameAccountInfo.wowProjectID
+		local characterName = gameAccountInfo.characterName
+		local realmName = gameAccountInfo.realmName
+		local faction = gameAccountInfo.factionName
+		local class = gameAccountInfo.className
+		local zoneName = gameAccountInfo.areaName
+		local level = gameAccountInfo.characterLevel
+		local gameText = gameAccountInfo.richPresence
+		local mobile = gameAccountInfo.isWowMobile
+		local canSummonFriend = gameAccountInfo.canSummon
+
+		isFavoriteFriend = gameAccountInfo.isFavorite
 
 		nameText = FriendGroups_GetBNetButtonNameText(accountName, client, canCoop, characterName, class, level)
 
@@ -453,7 +490,6 @@ local function FriendGroups_UpdateFriends()
 	local numFriendButtons = FriendButtons.count
 
 	local usedHeight = 0
-
 	scrollFrame.dividerPool:ReleaseAll()
 	scrollFrame.invitePool:ReleaseAll()
 	scrollFrame.PendingInvitesHeaderButton:Hide()
@@ -563,7 +599,7 @@ local function FriendGroups_Update(forceUpdate)
 	if ( not FriendsListFrame:IsShown() and not forceUpdate) then
 		return
 	end
-
+	
 	wipe(FriendButtons)
 	wipe(GroupTotal)
 	wipe(GroupOnline)
@@ -621,6 +657,7 @@ local function FriendGroups_Update(forceUpdate)
 			end
 		end
 	end
+
 	--favorite friends offline
 	for i = 1, numBNetFavoriteOffline do
 		local j = i + numBNetFavoriteOnline
@@ -637,6 +674,7 @@ local function FriendGroups_Update(forceUpdate)
 			end
 		end
 	end
+
 	-- online Battlenet friends
 	for i = 1, numBNetOnline - numBNetFavoriteOnline do
 		local j = i + numBNetFavorite
@@ -653,6 +691,7 @@ local function FriendGroups_Update(forceUpdate)
 			end
 		end
 	end
+
 	-- online WoW friends
 	for i = 1, numWoWOnline do
 		if not WowFriendGroups[i] then
@@ -700,7 +739,6 @@ local function FriendGroups_Update(forceUpdate)
 			end
 		end
 	end
-
 	buttonCount = buttonCount + GroupCount
 	-- 1.5 is a magic number which prevents the list scroll to be too long
 	totalScrollHeight = totalButtonHeight + GroupCount * FRIENDS_BUTTON_HEIGHTS[FRIENDS_BUTTON_TYPE_DIVIDER]
@@ -718,7 +756,6 @@ local function FriendGroups_Update(forceUpdate)
 		table.insert(GroupSorted, group)
 	end
 	table.sort(GroupSorted)
-
 	if GroupSorted[1] == "" then
 		table.remove(GroupSorted, 1)
 		table.insert(GroupSorted, "")
@@ -730,7 +767,6 @@ local function FriendGroups_Update(forceUpdate)
 			table.insert(GroupSorted,1,FriendRequestString)
 		end
 	end
-
 	local index = 0
 	for _,group in ipairs(GroupSorted) do
 		index = index + 1
@@ -791,7 +827,6 @@ local function FriendGroups_Update(forceUpdate)
 		end
 	end
 	FriendButtons.count = index
-
 	-- selection
 	local selectedFriend = 0
 	-- check that we have at least 1 friend
@@ -813,7 +848,6 @@ local function FriendGroups_Update(forceUpdate)
 		FriendsFrameSendMessageButton:Disable()
 	end
 	FriendsFrame.selectedFriend = selectedFriend
-
 	-- RID warning, upon getting the first RID invite
 	local showRIDWarning = false
 	local numInvites = BNGetNumFriendInvites()
@@ -830,6 +864,7 @@ local function FriendGroups_Update(forceUpdate)
 			end
 		end
 	end
+
 	if showRIDWarning then
 		FriendsListFrame.RIDWarning:Show()
 		FriendsScrollFrame.scrollBar:Disable()
